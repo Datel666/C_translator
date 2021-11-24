@@ -54,13 +54,7 @@ namespace LabRab1
             hc.showTablLexem(DGW);
             hc.classificationLexemes();
             hc.showAllTables(DGW2, DGW3, DGW4, DGW5, DGW6);
-            hc.syntaxisAnalys(0); //{ hc.showMatrix(lbMatrix); }
-            showMatrix(hc.matrix);
-        }
-
-        void showMatrix(List<string> matrix)
-        {
-            foreach (var i in matrix) lbMatrix.Items.Add(i);
+            if (hc.func_prog()) { hc.showMatrix(lbMatrix); }
         }
     }
 
@@ -87,8 +81,8 @@ namespace LabRab1
         }
         #region Лексический анализ
         bool doubleD = false;
-        string[] massDelimiter = new string[] { ",", ";", "+", "-", "=", "*", "/", "<", ">", "{", "}", "(", ")", "!", "|", "&", "^", "&&", "||", "!=", "==", "<=", "=<", ">=", "=>", "=!" };
-        string[] massSpecialWords = new string[] { "long", "int", "short", "char", "double","string", "if", "else", "main"};
+        string[] massDelimiter = new string[] { ",", ";", "+", "-", "=", "*", "/", "<", ">", "{", "}", "(", ")", "++", ":", "--" };
+        string[] massSpecialWords = new string[] { "char", "int", "short", "for" };
         string buff;
         int maxLenght = 8;
         int countSymbols = 0;
@@ -141,7 +135,7 @@ namespace LabRab1
                                     i++;
                                     buff = String.Empty;
                                 }
-                                else if (text[i] == '>' && text[i + 1] == '=')
+                                else if(text[i] == '>' && text[i + 1] == '=')
                                 {
                                     tabl.Add(">=");
                                     tablID.Add('D');
@@ -169,20 +163,6 @@ namespace LabRab1
                                     i++;
                                     buff = String.Empty;
                                 }
-                                else if (text[i] == '|' && text[i + 1] == '|')
-                                {
-                                    tabl.Add("||");
-                                    tablID.Add('D');
-                                    i++;
-                                    buff = String.Empty;
-                                }
-                                else if (text[i] == '&' && text[i + 1] == '&')
-                                {
-                                    tabl.Add("&&");
-                                    tablID.Add('D');
-                                    i++;
-                                    buff = String.Empty;
-                                }
                                 flagD = false;
                                 flagI = false;
                             }
@@ -201,7 +181,7 @@ namespace LabRab1
                     }
                     else
                     { // ЭТО БУКВА
-
+                        
                         flagI = true; // пока флаг не будет опущен последующие символы будут распозноваться как часть одного идентификатора
                         countSymbols++;
                         if (flagD) // предыдущий символ - число
@@ -214,7 +194,7 @@ namespace LabRab1
                 }
                 else
                 { // ЭТО ПРОБЕЛ
-
+                    
                     if (flagI)
                     {
                         if (countSymbols > maxLenght)
@@ -349,12 +329,18 @@ namespace LabRab1
                     {
                         saveBuff('L');
                     }
-                    ////////////////////////////////////////////////////////
-                    if (symbol != "+" && symbol != "-" && symbol != ">" && symbol != "<" && symbol != "=" && symbol != "!" && symbol != "|" && symbol != "&")
+////////////////////////////////////////////////////////
+                    if (symbol != "+" && symbol != "-" && symbol != ">" && symbol != "<" && symbol != "=" && symbol != "!")
                     {
                         tabl.Add(symbol);
                         tablID.Add('D');
                     }
+
+                    //if(symbol != ":" && symbol != "=")
+                    //{
+                    //    tabl.Add(symbol);
+                    //    tablID.Add('D');
+                    //}
                     else
                     {
                         buff = symbol; doubleD = true;
@@ -369,7 +355,7 @@ namespace LabRab1
 
         #region классификация лексем
         int[,] tablClassification;
-        public void classificationLexemes() 
+        public void classificationLexemes() // 2 таблица
         {
             tablClassification = new int[tabl.Count, 2];
             for (int i = 0; i < tabl.Count; i++)
@@ -434,10 +420,10 @@ namespace LabRab1
         }
 
         public void showAllTables(DataGridView DGW2, DataGridView DGW3, DataGridView DGW4, DataGridView DGW5, DataGridView DGW6)
-        {
+          {
             for (int i = 0; i < tabl.Count; i++)
             {
-                DGW2.Rows.Add(tablClassification[i, 0] + ", " + tablClassification[i, 1]);
+                DGW2.Rows.Add(tablClassification[i,0] + ", " + tablClassification[i, 1]);
             }
             for (int i = 0; i < tablVariable.Count; i++)
             {
@@ -459,327 +445,183 @@ namespace LabRab1
         #endregion
 
         #region Синтаксический анализ
-        Stack<string> stack = new Stack<string>(); 
+        string tek;
         int count = 0;
-      
-        void Offset()
+
+        void next()
         {
-            if (count < tabl.Count) { stack.Push(tabl[count]); count++; }
+            if (count < tabl.Count) { tek = tabl[count]; count++; }
+            else { tek = ""; }
         }
 
-        void Turn(int x, string pravilo)
-        {
-            if (stack.Count == 0) { MessageBox.Show("Стек пуст", "Ошибка"); }
-            for (int i = 0; i != x; i++)
-            {
-                stack.Pop();
-            }
-            stack.Push(pravilo);
-            return;
-        }
-
-        public void syntaxisAnalys(int state)
-        {
-            switch (state) // номер состояния с которого начинается разбор
-            {
-                case 0:
-                    if (stack.Count == 0) { Offset(); }
-                    if (stack.Peek() == "int") { syntaxisAnalys(2); } else { showMessage("int", stack.Peek()); return; }
-                    if (stack.Peek() == "<prog>") { syntaxisAnalys(1); }
-                    if (stack.Peek() == "<S>") { showMessage("Разбор успешно завершен!"); return; }
-                    break;
-                case 1:
-                    Turn(1, "<S>");
-                    break;
-                case 2:
-                    Offset();
-                    if (stack.Peek() == "main") { syntaxisAnalys(3); } else { showMessage("main", stack.Peek()); return; }
-                    break;
-                case 3:
-                    Offset();
-                    if (stack.Peek() == "(") { syntaxisAnalys(4); } else { showMessage("(", stack.Peek()); return; }
-                    break;
-                case 4:
-                    Offset();
-                    if (stack.Peek() == ")") { syntaxisAnalys(5); } else { showMessage(")", stack.Peek()); return; }
-                    break;
-                case 5:
-                    Offset();
-                    if (stack.Peek() == "{") { syntaxisAnalys(6); } else { showMessage("{", stack.Peek()); return; }
-                    if (stack.Peek() == "<ListOfDescriptions>") { syntaxisAnalys(14); }
-                    if (stack.Peek() == "<ListOfOperators>") { syntaxisAnalys(26); }
-                    break;
-                case 6:
-                    if (tabl[count] == "}") { MessageBox.Show("Разбор завершён"); break; }
-                    if (tabl[count] == "int" || tabl[count] == "short" || tabl[count] == "long" || tabl[count] == "char" || tabl[count] == "double" || tabl[count] == "string") { syntaxisAnalys(7); } else { showMessage("Тип переменной", tabl[count]); }
-                    if (stack.Peek() == "<Type>") { syntaxisAnalys(8); }
-                    if (stack.Peek() == "<Description>") { syntaxisAnalys(13); }
-                    break;
-                case 7:
-                    Offset();
-                    Turn(1, "<Type>");
-                    break;
-                case 8:
-                    Offset();
-                    if (tablClassification[count - 1, 0] == 3) { syntaxisAnalys(9); } else { showMessage("id", stack.Peek()); }
-                    if (stack.Peek() == "<ListOfVariables>") { syntaxisAnalys(12); }
-                    break;
-                case 9:
-                    Offset();
-                    if (stack.Peek() == ",") { syntaxisAnalys(11); }
-                    else if (stack.Peek() == ";") { syntaxisAnalys(10);  } 
-                    else { showMessage(", или ;", stack.Peek()); stack.Push("Error"); return; }
-                    break;
-                case 10:
-                    Turn(2, "<ListOfVariables>");
-                    break;
-                case 11:  
-                    Offset();
-                    if (tablClassification[count - 1, 0] == 3) { Turn(3, "<ListOfVariables>"); syntaxisAnalys(9); } else { showMessage("id", stack.Peek()); }
-                    break;
-                case 12:
-                    Turn(2, "<Description>");
-                    break;
-                case 13:
-                    if(count > tabl.Count - 1) { showMessage("}", stack.Peek()); stack.Push("Error"); return; }
-                    if (tabl[count] == "}") { if (stack.Peek() == "<Description>") ; Turn(1, "<ListOfDescriptions>"); break; }
-                    if (tabl[count] == "int" || tabl[count] == "short" || tabl[count] == "long" || tabl[count] == "char" || tabl[count] == "double" || tabl[count] == "string") { syntaxisAnalys(6); if (stack.Peek() == "<Description>" || stack.Peek() == "<ListOfDescriptions>") { Turn(2, "<ListOfDescriptions>"); } }
-                    else
-                    {
-                        if (stack.Peek() == "<Description>" || stack.Peek() == "<ListOfDescriptions>")
-                        {
-                            Turn(1, "<ListOfDescriptions>");
-                            syntaxisAnalys(14);
-                        }
-                    }
-                    break;
-                case 14:
-                    Offset();
-                    if (stack.Peek() == "if") { syntaxisAnalys(15); }
-                    else if(tablClassification[count - 1, 0] == 3) { syntaxisAnalys(28); }
-                    else { if (stack.Peek() == "}") { stack.Pop(); stack.Push("<ListOfOperators>"); count--; } return; }
-                    if(stack.Peek() == "<IF>") { syntaxisAnalys(34); }
-                    else if(stack.Peek() == "<Assigment>") { syntaxisAnalys(34); }
-                    else { return; }
-                    if (stack.Peek() == "<Operator>") { syntaxisAnalys(25); }
-                    break;
-                case 15:
-                    if(tabl[count] == "(") { syntaxisAnalys(16); } else { showMessage("(", tabl[count]); stack.Push("Error"); return; }
-                    break;
-                case 16:
-                    if (logic1())
-                    {
-                        while (stack.Peek() != "if") { stack.Pop(); }
-                        stack.Push("(");
-                        stack.Push("<Logic>");
-                        count--;
-                        syntaxisAnalys(17);
-                    }
-                    else { return; }
-                    break;
-                case 17:
-                    Offset();
-                    if (stack.Peek() == ")") { syntaxisAnalys(18); } else { showMessage(")", stack.Peek()); stack.Push("Error"); return; }
-                    if (stack.Peek() == "<BoodyIF>" || stack.Peek() == "<Assigment>") { syntaxisAnalys(20); }
-                    if(stack.Peek() == "<ELSE>") { syntaxisAnalys(22); } else { if (stack.Peek() == "<BoodyIF>") { syntaxisAnalys(23); } }
-                    break;
-                case 18:
-                    Offset();
-                    if (stack.Peek() == "{")
-                    {
-                        syntaxisAnalys(14);
-                        if (stack.Peek() == "<ListOfOperators>" || stack.Peek() == "<Operator>") { Offset(); } else { return; }
-                        if (stack.Peek() == "}") { syntaxisAnalys(19); } else { showMessage("}", stack.Peek()); stack.Push("Error"); return; }
-                    }
-                    else
-                    {
-                        if (tablClassification[count - 1, 0] == 3) { syntaxisAnalys(28); }
-                        else { showMessage("id или {", stack.Peek()); stack.Push("Error"); return; }
-                    }
-                    break;
-                case 19:
-                    Turn(3, "<BoodyIF>");
-                    break;
-                case 20:
-                    if (count < tabl.Count)
-                    {
-                        if (tabl[count] == "else")
-                        {
-                            Offset();
-                            syntaxisAnalys(18);
-                            if (stack.Peek() == "<BoodyIF>") { syntaxisAnalys(21); }
-                            break;
-                        }
-                    }
-                    if (stack.Peek() == "<Assigment>" || stack.Peek() == "<BoodyIF>") { syntaxisAnalys(23); }
-
-                    break;
-                case 21:
-                    Turn(2, "<ELSE>");
-                    break;
-                case 22:
-                    Turn(6, "<IF>");
-                    break;
-                case 23:
-                    Turn(5, "<IF>");
-                    break;
-                case 24:
-                    break;
-                case 25:
-                    if (count == tabl.Count - 1) { if (tabl[count] != "}") { showMessage("}", stack.Peek()); stack.Push("Error"); return; } if (stack.Peek() == "<Operator>") { Turn(1, "<ListOfOperators>"); } break; }
-                    if (count >= tabl.Count) { showMessage("}", stack.Peek()); stack.Push("Error"); return; }
-                    if (tabl[count] == "if" || tablClassification[count, 0] == 3) { syntaxisAnalys(14); if (stack.Peek() == "<Operator>" || stack.Peek() == "<ListOfOperators>") { Turn(2, "<ListOfOperators>"); } }
-                    break;
-                case 26:
-                    Offset();
-                    if(stack.Peek() == "}") { syntaxisAnalys(27); } else { showMessage("}", stack.Peek()); stack.Push("Error"); return; }
-                    break;
-                case 27:
-                    if(count < tabl.Count) { Offset(); showMessage("Сиволы после окончания функции : " + stack.Peek()); stack.Push("Error"); return; }
-                    Turn(8, "<prog>");
-                    break;
-                case 28:
-                    Offset();
-                    if (stack.Peek() == "=") { syntaxisAnalys(29); } else { showMessage("=", stack.Peek()); stack.Push("Error"); return; }
-                    break;
-                case 29:
-                    Offset();
-                    if (tablClassification[count - 1, 0] == 3 || tablClassification[count - 1, 0] == 4) { syntaxisAnalys(30); } else { showMessage("id или литерал", stack.Peek()); stack.Push("Error"); return; }
-                    if (stack.Peek() == "<Right>") { syntaxisAnalys(33); }
-                    break;
-                case 30:
-                    Offset();
-                    if (stack.Peek() == ";") { syntaxisAnalys(31); }
-                    else if (stack.Peek() == "+" || stack.Peek() == "-" || stack.Peek() == "*" || stack.Peek() == "/") { syntaxisAnalys(32); }
-                    else { showMessage("; или (+ - / *)", stack.Peek()); stack.Push("Error"); return; }
-                    break;
-                case 31:
-                    Turn(2, "<Right>");
-                    break;
-                case 32:
-                    Offset();
-                    if (tablClassification[count - 1, 0] == 3 || tablClassification[count - 1, 0] == 4) { Turn(3, "<Operand>"); syntaxisAnalys(30); } else { showMessage("id или литерал", stack.Peek()); stack.Push("Error"); return; }
-                    break;
-                case 33:
-                    Turn(3, "<Assigment>");
-                    break;
-                case 34:
-                    Turn(1, "<Operator>");
-                    break;
-            }
-        }
-        void showError(string message)
-        {
-            MessageBox.Show(message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
         void showMessage(string message)
         {
-            MessageBox.Show(message, "Сообщение", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(message, "ОШИБКА", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         void showMessage(string mes1, string mes2)
         {
             MessageBox.Show("Ожидалось " + mes1 + " а не " + mes2, "ОШИБКА", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        bool logic1()
+        public bool func_prog()
+        {
+            next();
+            if (tablClassification[count - 1, 0] == 3) { next(); } else { showMessage("Программа должнга начинаться с имени функции."); return false; }
+            if (tek == "(") { next(); } else { showMessage("(", tek); return false; }
+            if (tek == ")") { next(); } else { showMessage(")", tek); return false; }
+            if (tek == "{") { next(); } else { showMessage("{", tek); return false; }
+            if (!func_listOfDescriptions()) { return false; }
+            if (!func_listOfOperators()) { return false; }// не закончил
+            if (tek != "}") { showMessage("}", tek); return false; }
+            MessageBox.Show("Успешно!", "СООБЩЕНИЕ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return true;
+        }
+
+        #region Описание
+        bool func_listOfDescriptions()
+        {
+            if (!func_description()) { return false; }
+            if (tek == "int" || tek == "long" || tek == "short")
+            {
+                if (!func_listOfDescriptions()) { return false; }
+            }
+            return true;
+        }
+
+        bool func_description()
+        {
+            if (!func_type()) return false;
+            if (!func_listOfVariables()) return false;
+            return true;
+        }
+
+        bool func_type()
+        {
+            if(tek != "int" && tek != "long" && tek != "short") { showMessage("Необходимо указать тип переменной."); return false; }
+            next(); return true;
+        }
+
+        bool func_listOfVariables()
+        {
+            if (tablClassification[count - 1, 0] == 3) { next(); } else { showMessage("идентификатор", tek); return false; }
+            if (tek == ";") { next(); return true; }
+            else if (tek == ",") { next(); if (!func_listOfVariables()) return false; }
+            else { showMessage(";", tek); return false; }
+            return true;
+        }
+        #endregion
+
+        bool func_listOfOperators()
+        {
+            if (!func_operator()) { return false; }
+            if (tek != ";" && tek != "}") { showMessage(";", tek); return false; }
+            if (tek == ";") { next(); }
+            if (tek == "}") { return true; }
+            else { if (!func_listOfOperators()) { return false; } }
+            return true;
+        }
+
+        bool func_operator()
+        {
+            if(tablClassification[count-1,0] == 3) { if (!func_assignment()) { return false; } }
+            else if (!func_cycle()) { return false; }
+            return true;
+        }
+
+        bool func_increment()
+        {
+            next();
+            if(tablClassification[count-1,0] != 3) { showMessage("идентификатор", tek); }
+            next();
+            if(tek!="++" && tek != "--") { showMessage("инкрумент или декремент.", tek); return false; }
+            next();
+            return true;
+        }
+
+        bool func_assignment()
+        {
+            next(); if (tek != "=") { showMessage("=", tek); return false; }
+            next(); if(tablClassification[count-1,0] != 3 && tablClassification[count - 1, 0] != 4) { showMessage("операнд",tek); return false; }
+            if (!ariphmetic()) { return false; }
+            return true;
+        }
+
+        bool ariphmetic()
         {
             Stack<string> st = new Stack<string>(); // стек для операций и скобок
             List<string> outputString = new List<string>(); // выходная строка
-            List<char> outputStringID = new List<char>();
+            List<char> outpunStringID = new List<char>(); // классификация элементов в вых строке
             bool flagI = false; // Если флаг поднят, то следующий символ должен быть операнд
             bool flagR = false; // Если флаг поднят, то следующий символ должен быть операцией
             int countAriphmeticParts = 1; // cчетчик частей выражения
-            while (true)
+            while (tek != ";") // разбираем выражение пока не встретим ;
             {
-                Offset();
-                if (stack.Peek() == "(") { if (flagR) { showMessage("логическая операция", stack.Peek()); return false; } flagI = true; st.Push(stack.Peek()); Offset(); countAriphmeticParts++; } // если встречаем '(', то добавляем его в стек и поднимаем флаг идентификатора
-                if (!flagR) 
+                if (tek == "(") { if (flagR) { showMessage("операция(+ - * /)", tek); return false; } flagI = true; st.Push(tek); next(); countAriphmeticParts++; } // если встречаем '(', то добавляем его в стек и поднимаем флаг идентификатора
+                if (!flagR) // если символ должен быть R, то не проверяем его как I
                 {
-                    if (tablClassification[count - 1, 0] == 3 || tablClassification[count - 1, 0] == 4) { outputString.Add(stack.Peek()); outputStringID.Add('I'); Offset(); countAriphmeticParts++; flagI = false; } // если операнд, то добавляем его к вых строке
-                    else { if (stack.Peek() != "(" && stack.Peek() != "") { showMessage("операнд", stack.Peek()); return false; } } // иначе ошибка, за исключением символа '('
+                    if (tablClassification[count-1,0] == 3 || tablClassification[count - 1, 0] == 4) { outputString.Add(tek); outpunStringID.Add('I'); next(); countAriphmeticParts++; flagI = false; } // если операгнд, то добавляем его к вых строке
+                    else { if (tek != "(") { showMessage("операнд", tek); return false; } } // иначе ошибка, за исключением символа '('
                 }
 
-                if (tablClassification[count - 1, 0] != 2) { showMessage("логическая операция", stack.Peek()); return false; }
-                else { flagR = false; }
-                if (stack.Peek() == "(" || stack.Peek() == "^") { if (flagR) { showMessage("логическая операция", stack.Peek()); return false; } flagI = true; st.Push(stack.Peek()); countAriphmeticParts++; }
-                else if (stack.Peek() == "||" || stack.Peek() == "|")
+                if (tek != ";") // если ; то выход 
                 {
-                    if (flagI) { showMessage("операнд", stack.Peek()); return false; } // если флаг I поднят то ошибка
-                    if (st.Count == 0) { st.Push(stack.Peek()); countAriphmeticParts++; flagI = true; } // стек пуст то добавляем символ
-                    else
+                    if (tablClassification[count-1,0] != 2) { showMessage("операция(+ - * /)", tek); return false; }
+                    else { flagR = false;}
+                    if (tek == "(") { if (flagR) { showMessage("операция(+ - * /)", tek); return false; } flagI = true; st.Push(tek); next(); countAriphmeticParts++; }
+                    else if (tek == "+" || tek == "-") // если + или - то
                     {
-                        while (st.Count != 0 && st.Peek() != "(") // выталкиваем символы из стека и записываем их в вых строку
-                        { // пока не встретим символ с приоритетом меньше чем у входного символа или пока стек не опустел
-                            outputString.Add(st.Pop()); outputStringID.Add('R');
-                        }
-                        st.Push(stack.Peek()); countAriphmeticParts++; flagI = true; // затем добавляем входной символ в стек
-                    }
-                }
-                else if (stack.Peek() == "&&" || stack.Peek() == "&")
-                {
-                    if (flagI) { showMessage("операнд", stack.Peek()); return false; }
-                    if (st.Count == 0) { st.Push(stack.Peek()); countAriphmeticParts++; }
-                    else
-                    {
-                        while (st.Count != 0 && (st.Peek() != "||" && st.Peek() != "|" && st.Peek() != "("))
+                        if (flagI) { showMessage("операнд", tek); return false; } // если флаг I поднят то ошибка
+                        if (st.Count == 0) { st.Push(tek); next(); countAriphmeticParts++; flagI = true; } // стек пуст то добавляем символ
+                        else // иначе
                         {
-                            outputString.Add(st.Pop()); outputStringID.Add('R');
+                            while (st.Count != 0 && st.Peek() != "(" && st.Peek() != ")") // выталкиваем символы из стека и записываем их в вых строку
+                            { // пока не встретим символ с приоритетом меньше чем у входного символа или пока стек нге опустел
+                                outputString.Add(st.Pop()); outpunStringID.Add('R');
+                            }
+                            st.Push(tek); next(); countAriphmeticParts++; flagI = true; // затем добавляем входнгой символ в стек
                         }
-                        st.Push(stack.Peek()); countAriphmeticParts++; flagI = true;
                     }
-                }
-                else if (stack.Peek() == "!")
-                {
-                    if (st.Count == 0) { st.Push(stack.Peek()); countAriphmeticParts++; }
-                    else
+                    else if (tek == "*" || tek == "/") // если * или / то 
                     {
-                        while (st.Count != 0 && (st.Peek() != "||" && st.Peek() != "|" && st.Peek() != "&&" && st.Peek() != "&" && st.Peek() != "("))
+                        if (flagI) { showMessage("операнд", tek); return false; } // если флаг I поднят то выход
+                        if (st.Count == 0) { st.Push(tek); next(); countAriphmeticParts++; } // если стек пуст то добавляем символ к вых строке
+                        else if (st.Peek() == "*" || st.Peek() == "/") // иначе если на верхушке стека находится * или / то 
                         {
-                            outputString.Add(st.Pop()); outputStringID.Add('R');
+                            while (st.Count != 0 && (st.Peek() == "*" || st.Peek() == "/")) // Если на верхушке стека символ '*' или '/' то добавляем его к выходной строке
+                            {
+                                outputString.Add(st.Pop()); outpunStringID.Add('R');
+                            }
+                            st.Push(tek); next(); countAriphmeticParts++; flagI = true; // затем добавляем вх символ в стек
                         }
-                        st.Push(stack.Peek()); countAriphmeticParts++; flagI = true;
+                        else { st.Push(tek); next(); countAriphmeticParts++; flagI = true; } // если на верхушке стека находится не * и не / то добавляем к стеку вх символ
                     }
-                }
-                else if (stack.Peek() == "!=" || stack.Peek() == ">=" || stack.Peek() == "<=" || stack.Peek() == "==" || stack.Peek() == "<" || stack.Peek() == ">")
-                {    
-                    if (st.Count == 0) { st.Push(stack.Peek()); countAriphmeticParts++; }
-                    else
+                    else if (tek == ")") // если встречаем символ ')' то выталкиваем из стека символы пока не встретится символ '('
                     {
-                        while (st.Count != 0 &&(st.Peek() == "^" || st.Peek() == "!=" || st.Peek() == ">=" || st.Peek() == "<=" || st.Peek() == "==" || st.Peek() == "<" || st.Peek() == ">"))
+                        if (flagI) { showMessage("операнд", tek); return false; }
+                        while (st.Count != 0 && st.Peek() != "(")
                         {
-                            outputString.Add(st.Pop()); outputStringID.Add('R');
+                            outputString.Add(st.Pop()); outpunStringID.Add('R');
                         }
-                        st.Push(stack.Peek()); countAriphmeticParts++; flagI = true;
+                        if (st.Count == 0) { showMessage("Скобки не сбалансированы"); return false; }
+                        st.Pop(); next(); flagR = true; // символ ')' не добавляется в стек и символ '(' удаляется из стека
                     }
+                    else { showMessage("* или / или + или - или ) или ;", tek); return false; }
                 }
-                else if (stack.Peek() == ")") // если встречаем символ ')' то выталкиваем из стека символы пока не встретится символ '('
-                {
-                    if (flagI) { showMessage("операнд", stack.Peek()); return false; }
-                    while (st.Count != 0 && st.Peek() != "(")
-                    {
-                        outputString.Add(st.Pop()); outputStringID.Add('R');
-                    }
-                    if (st.Count == 0) { showMessage("Скобки не сбалансированы"); return false; }
-                    if(count + 1 >= tabl.Count) { showMessage("Отсутствует тело цикла"); return false; }
-                    st.Pop(); flagR = true; // символ ')' не добавляется в стек и символ '(' удаляется из стека
-                    if(tabl[count] == "{" || tabl[count] == "else" || tabl[count + 1] == "=") { break; }
-                }
-                else { showMessage("операция или )", stack.Peek()); return false; }
             }
-            if (flagI) { showMessage("операнд", stack.Peek()); return false; }
-            while (st.Count != 0) { outputString.Add(st.Pop()); outputStringID.Add('R'); } // выталкиваем оставшиеся символы из стека
+            if (flagI) { showMessage("операнд", tek); return false; }
+            while (st.Count != 0) { outputString.Add(st.Pop()); outpunStringID.Add('R'); } // выталкиваем оставшиеся символы из стека
             bool flagBalance = false;
             for (int i = 0; i < outputString.Count; i++)
             {
                 if (outputString[i] == "(" || outputString[i] == ")") { flagBalance = true; } // если в вых строке есть символы '(' или ')' то скобки не сбалансированы
             }
             if (flagBalance) { showMessage("Скобки не сбалансированы"); return false; }
-            if (countAriphmeticParts > 2) { translateIntoMatrix(outputString, outputStringID); }
-
+            if (countAriphmeticParts > 2) { translateIntoMatrix(outputString, outpunStringID); }
+            
             return true;
         }
 
-        public List<string> matrix { get; } = new List<string>();
+        List<string> matrix = new List<string>();
         void translateIntoMatrix(List<string> opn, List<char> id) // функция преобразовывает ОПН в матрицу
         {
             int countSost = 1; //  счетчик состояний
@@ -797,6 +639,33 @@ namespace LabRab1
                 }
             }
         }
+
+        bool func_condition()
+        {
+            if(tablClassification[count-1,0] != 3) { showMessage("идегнтификатор.", tek); return false; }
+            next();
+            if (tek != ">" && tek != "<" && tek != ">=" && tek != "<=" && tek != "==" && tek != "!=") { showMessage("операция сравггнения", tek); return false; }
+            next();
+            if(tablClassification[count-1,0] != 3 && tablClassification[count - 1, 0] != 4) { showMessage("операнд.", tek); return false; }
+            next();
+            return true;
+        }
+
+        bool func_cycle()
+        {
+            next();
+            if (tek == "(") { next(); } else { showMessage("(", tek); return false; }
+            if (tablClassification[count - 1, 0] == 3) { if (!func_assignment()) { return false; } } else { showMessage("идентификатор.", tek); return false; }
+            next();
+            if (!func_condition()) { return false; }
+            if (!func_increment()) { return false; }
+            if (tek == ")") { next(); } else { showMessage(")", tek); return false; }
+            if (tek == "{") { next(); } else { showMessage("{", tek); return false; }
+            if (!func_listOfOperators()) { return false; }
+            if (tek == "}") { next(); if (tek == "") { showMessage("}", tek); return false; } } else { showMessage("}", tek); return false; }
+            return true;
+        }
+
         #endregion
     }
 }
